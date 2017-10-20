@@ -29,9 +29,9 @@
     </description>
 
     <scm>
-        <connection>scm:svn:http://svn.apache.org/repos/asf/sling/trunk/installer/hc</connection>
-        <developerConnection>scm:svn:https://svn.apache.org/repos/asf/sling/trunk/installer/hc</developerConnection>
-        <url>http://svn.apache.org/viewvc/sling/trunk/installer/hc</url>
+        <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-installer-hc.git</conncetion>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-installer-hc.git</developerConnection>
+        <url>https://gitbox.apache.org/repos/asf?p=sling-org-apache-sling-installer-hc.git</url>
     </scm>
 
     <!-- make compile with java 7 -->
