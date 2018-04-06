@@ -45,11 +45,12 @@
                 <groupId>biz.aQute.bnd</groupId>
                 <artifactId>bnd-maven-plugin</artifactId>
             </plugin>
-            <!-- disable until https://github.com/bndtools/bnd/issues/2248 is released  
+            <!-- disable during release prepare and perform via the additional parameter '-Darguments="-Dbnd.baseline.skip=true'
+                 until https://github.com/bndtools/bnd/issues/2248 is released (compare with https://lists.apache.org/thread.html/56465419b0c36dae88386a1b9b9839eddd827fe811d6fffff12f645d@%3Cdev.sling.apache.org%3E) -->
             <plugin>
                 <groupId>biz.aQute.bnd</groupId>
                 <artifactId>bnd-baseline-maven-plugin</artifactId>
-            </plugin> -->
+            </plugin> 
         </plugins>
     </build>
 
