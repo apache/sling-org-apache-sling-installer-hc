@@ -20,13 +20,7 @@ package org.apache.sling.installer.hc;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.sling.commons.osgi.PropertiesUtil;
-import org.apache.sling.hc.annotations.SlingHealthCheck;
 import org.apache.sling.hc.api.HealthCheck;
 import org.apache.sling.hc.api.Result;
 import org.apache.sling.hc.util.FormattingResultLog;
@@ -35,19 +29,20 @@ import org.apache.sling.installer.api.info.InfoProvider;
 import org.apache.sling.installer.api.info.InstallationState;
 import org.apache.sling.installer.api.info.Resource;
 import org.apache.sling.installer.api.info.ResourceGroup;
+import org.apache.sling.installer.hc.OsgiInstallerHealthCheck.Configuration;
 import org.osgi.framework.Version;
 import org.osgi.service.cm.ConfigurationAdmin;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.metatype.annotations.AttributeDefinition;
+import org.osgi.service.metatype.annotations.Designate;
+import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SlingHealthCheck(
-    name = OsgiInstallerHealthCheck.HC_NAME,
-    description = "Checks that all OSGi configurations/bundles are successfully installed by the OSGi Installer (and are not skipped for some reason).",
-    tags = {
-        "installer",
-        "osgi"
-    }
-)
+@Component(property={ HealthCheck.NAME+"="+OsgiInstallerHealthCheck.HC_NAME })
+@Designate(ocd=Configuration.class)
 public class OsgiInstallerHealthCheck implements HealthCheck {
     protected static final String HC_NAME = "OSGi Installer Health Check";
 
@@ -56,44 +51,42 @@ public class OsgiInstallerHealthCheck implements HealthCheck {
 
     private static final Logger LOG = LoggerFactory.getLogger(OsgiInstallerHealthCheck.class);
 
-    private static final String DEFAULT_URL_PREFIX = "jcrinstall:/apps/";
-
-    @Property(label = "URL Prefixes to consider", description = "Only those OSGi configurations/bundles whose location are starting with one of the given URL prefixes are checked (whether they are installed correctly). Open /system/console/osgi-installer for a list of valid prefixes.", cardinality = 1, value = DEFAULT_URL_PREFIX)
-    static final String PROP_URL_PREFIXES = "urlPrefixes";
-
-    @Property(label = "Check Bundles", description = "If enabled bundles are checked (restricted to the ones matching one of the prefixes)", boolValue = true)
-    static final String PROP_CHECK_BUNDLES = "checkBundles";
-
-    @Property(label = "Check Configurations", description = "If enabled configurations are checked (restricted to the ones matching one of the prefixes)", boolValue = true)
-    static final String PROP_CHECK_CONFIGURATIONS = "checkConfigurations";
-
-    @Property(label = "Allow not installed artifacts in a group", description="If true there is no warning reported if at least one artifact in the same group (i.e. with the same entity id) is installed matching one of the configured URL prefixes. Otherwise there is a warning for every not installed artifact", boolValue=false)
-    static final String PROP_CHECK_ALLOW_NOT_INSTALLED_ARTIFACTS_IN_GROUP = "allowNotInstalledArtifactsInAGroup";
-    
-    @Property(label = "Skip entity ids", description="The given entity ids should be skipped for the health check. Each entry has the format '<entity id> [<version>]", cardinality = 1)
-    static final String PROP_SKIP_ENTITY_IDS = "skipEntityIds";
-    
-    private String[] urlPrefixes;
+    private Configuration configuration;
     private Map<String, Version> skipEntityIdsWithVersions;
-    private boolean checkBundles;
-    private boolean checkConfigurations;
-    private boolean allowNotInstalledArtifactsInAGroup;
     
     private final static String DOCUMENTATION_URL = "https://sling.apache.org/documentation/bundles/osgi-installer.html#health-check";
 
     @Reference
     private ConfigurationAdmin configurationAdmin;
+    
+    @ObjectClassDefinition(name = HC_NAME, 
+            description="Checks that all OSGi configurations/bundles are successfully installed by the OSGi Installer (and are not skipped for some reason).")
+    protected static @interface Configuration {
+        @AttributeDefinition(name="Tags", description="Tags with which this healthcheck is associated")
+        String[] tags() default {"installer", "osgi"};
+        
+        @AttributeDefinition(name="URL Prefixes to consider", description = "Only those OSGi configurations/bundles whose location are starting with one of the given URL prefixes are checked (whether they are installed correctly). Open /system/console/osgi-installer for a list of valid prefixes.")
+        String[] urlPrefixes() default "jcrinstall:/apps/";
+        
+        @AttributeDefinition(name="Check Bundles", description = "If enabled bundles are checked (restricted to the ones matching one of the prefixes)")
+        boolean checkBundles() default true;
+        
+        @AttributeDefinition(name="Check Configurations", description = "If enabled configurations are checked (restricted to the ones matching one of the prefixes)")
+        boolean checkConfigurations() default true;
+        
+        @AttributeDefinition(name="Allow ignored artifacts in a group", description = "If true there is no warning reported for not installed artifacts if at least one artifact in the same group (i.e. with the same entity id) is installed matching one of the configured URL prefixes. Otherwise there is a warning for every ignored artifact.")
+        boolean allowIgnoredArtifactsInGroup() default false;
+        
+        @AttributeDefinition(name="Skip entity ids", description = "The given entity ids should be skipped for the health check. Each entry has the format '<entity id> [<version>]'.")
+        String[] skipEntityIds();
+    }
 
     @Activate
-    public void activate(Map<String, ?> properties) {
-        urlPrefixes = PropertiesUtil.toStringArray(properties.get(PROP_URL_PREFIXES),
-                new String[] { DEFAULT_URL_PREFIX });
-        checkBundles = PropertiesUtil.toBoolean(properties.get(PROP_CHECK_BUNDLES), true);
-        checkConfigurations = PropertiesUtil.toBoolean(properties.get(PROP_CHECK_CONFIGURATIONS), true);
-        allowNotInstalledArtifactsInAGroup = PropertiesUtil.toBoolean(properties.get(PROP_CHECK_ALLOW_NOT_INSTALLED_ARTIFACTS_IN_GROUP), false);
-        skipEntityIdsWithVersions = parseEntityIdsWithVersions(PropertiesUtil.toStringArray(properties.get(PROP_SKIP_ENTITY_IDS), null));
+    protected void activate(Configuration configuration) {
+        this.configuration = configuration;
+        skipEntityIdsWithVersions = parseEntityIdsWithVersions(configuration.skipEntityIds());
     }
-    
+
     private Map<String, Version> parseEntityIdsWithVersions(String[] entityIdsAndVersions) throws IllegalArgumentException {
         Map<String, Version> entityIdsWithVersions = new HashMap<>();
         if (entityIdsAndVersions != null) {
@@ -156,13 +149,13 @@ public class OsgiInstallerHealthCheck implements HealthCheck {
             resourceType = resource.getType();
             switch (resourceType) {
             case InstallableResource.TYPE_CONFIG:
-                if (!checkConfigurations) {
+                if (!configuration.checkConfigurations()) {
                     LOG.debug("Skip resource '{}', configuration checks are disabled", resource.getEntityId());
                     return "";
                 }
                 break;
             case InstallableResource.TYPE_BUNDLE:
-                if (!checkBundles) {
+                if (!configuration.checkBundles()) {
                     LOG.debug("Skip resource '{}', bundle checks are disabled", resource.getEntityId());
                     return "";
                 }
@@ -172,13 +165,13 @@ public class OsgiInstallerHealthCheck implements HealthCheck {
                         resource.getEntityId(), resourceType);
                 return "";
             }
-            if (StringUtils.startsWithAny(resource.getURL(), urlPrefixes)) {
+            if (StringUtils.startsWithAny(resource.getURL(), configuration.urlPrefixes())) {
                 isGroupRelevant = true;
                 switch (resource.getState()) {
                 case IGNORED: // means a considered resource was found and it is invalid
                     // still the other resources need to be evaluated
                 case INSTALL:
-                    if (!allowNotInstalledArtifactsInAGroup) {
+                    if (!configuration.allowIgnoredArtifactsInGroup()) {
                         reportInvalidResource(resource, resourceType, hcLog);
                     } else {
                         if (invalidResource == null) {
@@ -187,7 +180,7 @@ public class OsgiInstallerHealthCheck implements HealthCheck {
                     }
                     break;
                 default:
-                    if (allowNotInstalledArtifactsInAGroup) {
+                    if (configuration.allowIgnoredArtifactsInGroup()) {
                         // means a considered resource was found and it is valid
                         // no need to evaluate other resources from this group
                         return resourceType;
@@ -195,10 +188,10 @@ public class OsgiInstallerHealthCheck implements HealthCheck {
                 }
             } else {
                 LOG.debug("Skipping resource '{}' as its URL is not starting with any of these prefixes'{}'", resource,
-                        StringUtils.join(urlPrefixes, ","));
+                        StringUtils.join(configuration.urlPrefixes(), ","));
             }
         }
-        if (invalidResource != null && allowNotInstalledArtifactsInAGroup) {
+        if (invalidResource != null && configuration.allowIgnoredArtifactsInGroup()) {
             reportInvalidResource(invalidResource, resourceType, hcLog);
         }
         
