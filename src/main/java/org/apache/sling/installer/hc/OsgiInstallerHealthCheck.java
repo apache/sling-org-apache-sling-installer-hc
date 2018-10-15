@@ -17,7 +17,10 @@
  */
 package org.apache.sling.installer.hc;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
@@ -52,7 +55,7 @@ public class OsgiInstallerHealthCheck implements HealthCheck {
     private static final Logger LOG = LoggerFactory.getLogger(OsgiInstallerHealthCheck.class);
 
     private Configuration configuration;
-    private Map<String, Version> skipEntityIdsWithVersions;
+    private Map<String, List<Version>> skipEntityIdsWithVersions;
     
     private final static String DOCUMENTATION_URL = "https://sling.apache.org/documentation/bundles/osgi-installer.html#health-check";
 
@@ -84,11 +87,16 @@ public class OsgiInstallerHealthCheck implements HealthCheck {
     @Activate
     protected void activate(Configuration configuration) {
         this.configuration = configuration;
-        skipEntityIdsWithVersions = parseEntityIdsWithVersions(configuration.skipEntityIds());
+        try {
+            skipEntityIdsWithVersions = parseEntityIdsWithVersions(configuration.skipEntityIds());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("Invalid configuration in 'skipEntityIds': " + e.getLocalizedMessage(), e);
+        }
+        
     }
 
-    private Map<String, Version> parseEntityIdsWithVersions(String[] entityIdsAndVersions) throws IllegalArgumentException {
-        Map<String, Version> entityIdsWithVersions = new HashMap<>();
+    static Map<String, List<Version>> parseEntityIdsWithVersions(String[] entityIdsAndVersions) throws IllegalArgumentException {
+        Map<String, List<Version>> entityIdsWithVersions = new HashMap<>();
         if (entityIdsAndVersions != null) {
             for (String entityIdAndVersion : entityIdsAndVersions) {
                 String[] parts = entityIdAndVersion.split(" ", 2);
@@ -99,7 +107,25 @@ public class OsgiInstallerHealthCheck implements HealthCheck {
                 } else {
                     version = null;
                 }
-                entityIdsWithVersions.put(entityId, version);
+                // does an entry with the same id already exist?
+                if (entityIdsWithVersions.containsKey(entityId)) {
+                    
+                    List<Version> versions = entityIdsWithVersions.get(entityId);
+                    // previous entry contained no version?
+                    if (versions == null) {
+                        throw new IllegalArgumentException("One entry with 'id' " + entityId + " contained no version limitation and there was another entry with the same id. This is an invalid combination. Please only list the same id more than once if different versions are given as well.");
+                    }
+                    versions.add(version);
+                } else {
+                    final List<Version> versions;
+                    if (version == null) {
+                        versions = null;
+                    } else {
+                        versions = new ArrayList<>(Collections.singletonList(version));
+                    }
+                    entityIdsWithVersions.put(entityId, versions);
+                }
+                
             }
         }
         return entityIdsWithVersions;
@@ -201,11 +227,13 @@ public class OsgiInstallerHealthCheck implements HealthCheck {
 
     private void reportInvalidResource(Resource invalidResource, String resourceType, FormattingResultLog hcLog) {
         if (skipEntityIdsWithVersions.containsKey(invalidResource.getEntityId())) {
-            Version version = skipEntityIdsWithVersions.get(invalidResource.getEntityId());
-            if (version != null) {
-                if (version.equals(invalidResource.getVersion())) {
-                    LOG.debug("Skipping not installed resource '{}' as its entity id and version is in the skip list", invalidResource);
-                    return;
+            List<Version> versions = skipEntityIdsWithVersions.get(invalidResource.getEntityId());
+            if (versions != null) {
+                for (Version version : versions) {
+                    if (version.equals(invalidResource.getVersion())) {
+                        LOG.debug("Skipping not installed resource '{}' as its entity id and version is in the skip list", invalidResource);
+                        return;
+                    }
                 }
             } else {
                 LOG.debug("Skipping not installed resource '{}' as its entity id is in the skip list", invalidResource);
