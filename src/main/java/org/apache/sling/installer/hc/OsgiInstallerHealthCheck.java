@@ -24,9 +24,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.sling.hc.api.HealthCheck;
-import org.apache.sling.hc.api.Result;
-import org.apache.sling.hc.util.FormattingResultLog;
+import org.apache.felix.hc.api.HealthCheck;
+import org.apache.felix.hc.api.Result;
+import org.apache.felix.hc.api.FormattingResultLog;
 import org.apache.sling.installer.api.InstallableResource;
 import org.apache.sling.installer.api.info.InfoProvider;
 import org.apache.sling.installer.api.info.InstallationState;
