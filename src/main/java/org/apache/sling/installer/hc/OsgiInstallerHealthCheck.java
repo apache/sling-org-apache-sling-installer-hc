@@ -57,7 +57,7 @@ public class OsgiInstallerHealthCheck implements HealthCheck {
     private Configuration configuration;
     private Map<String, List<Version>> skipEntityIdsWithVersions;
     
-    private final static String DOCUMENTATION_URL = "https://sling.apache.org/documentation/bundles/osgi-installer.html#health-check";
+    private static final String DOCUMENTATION_URL = "https://sling.apache.org/documentation/bundles/osgi-installer.html#health-check";
 
     @Reference
     private ConfigurationAdmin configurationAdmin;
