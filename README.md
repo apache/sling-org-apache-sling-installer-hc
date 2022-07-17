@@ -6,4 +6,4 @@
 
 This module is part of the [Apache Sling](https://sling.apache.org) project.
 
-Provides Sling Health Checks related to the Sling Installer.
+Provides [Felix Health Checks](https://felix.apache.org/documentation/subprojects/apache-felix-healthchecks.html) related to the [Sling Installer](https://sling.apache.org/documentation/bundles/osgi-installer.html).
