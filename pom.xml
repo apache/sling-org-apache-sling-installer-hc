@@ -32,7 +32,7 @@
   <version>2.1.0-SNAPSHOT</version>
 
   <name>Apache Sling Installer Health Checks</name>
-  <description>Provides Sling Health Checks related to the Sling Installer.</description>
+  <description>Provides Felix Health Checks related to the Sling Installer.</description>
 
   <scm>
     <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-installer-hc.git</connection>
