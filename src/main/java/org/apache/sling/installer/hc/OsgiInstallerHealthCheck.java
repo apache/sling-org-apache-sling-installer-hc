@@ -18,12 +18,12 @@
 package org.apache.sling.installer.hc;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.hc.api.HealthCheck;
 import org.apache.felix.hc.api.Result;
 import org.apache.felix.hc.api.FormattingResultLog;
@@ -192,7 +192,7 @@ public class OsgiInstallerHealthCheck implements HealthCheck {
                         resource.getEntityId(), resourceType);
                 return "";
             }
-            if (StringUtils.startsWithAny(resource.getURL(), configuration.urlPrefixes())) {
+            if (Arrays.stream(configuration.urlPrefixes()).anyMatch(resource.getURL()::startsWith)) {
                 isGroupRelevant = true;
                 switch (resource.getState()) {
                 case IGNORED: // means a considered resource was found and it is invalid
@@ -214,8 +214,7 @@ public class OsgiInstallerHealthCheck implements HealthCheck {
                     }
                 }
             } else {
-                LOG.debug("Skipping resource '{}' as its URL is not starting with any of these prefixes'{}'", resource,
-                        StringUtils.join(configuration.urlPrefixes(), ","));
+                LOG.debug("Skipping resource '{}' as its URL is not starting with any of these prefixes '{}'", resource, (Object) configuration.urlPrefixes());
             }
         }
         if (invalidResource != null && configuration.allowIgnoredArtifactsInGroup()) {

@@ -86,13 +86,6 @@
       <artifactId>org.osgi.service.metatype.annotations</artifactId>
       <scope>provided</scope>
     </dependency>
-    <!-- Apache Commons -->
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-      <version>3.0</version>
-      <scope>provided</scope>
-    </dependency>
     <!-- Apache Felix -->
     <dependency>
       <groupId>org.apache.felix</groupId>
