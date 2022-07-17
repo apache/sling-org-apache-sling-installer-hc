@@ -66,6 +66,7 @@ public class OsgiInstallerHealthCheck implements HealthCheck {
             description="Checks that all OSGi configurations/bundles are successfully installed by the OSGi Installer (and are not skipped for some reason).")
     protected static @interface Configuration {
         @AttributeDefinition(name="Tags", description="Tags with which this healthcheck is associated")
+        @SuppressWarnings("java:S100")
         String[] hc_tags() default {"installer", "osgi"};
         
         @AttributeDefinition(name="URL Prefixes to consider", description = "Only those OSGi configurations/bundles whose location are starting with one of the given URL prefixes are checked (whether they are installed correctly). Open /system/console/osgi-installer for a list of valid prefixes.")
