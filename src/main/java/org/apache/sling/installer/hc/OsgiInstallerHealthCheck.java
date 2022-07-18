@@ -37,6 +37,7 @@ import org.osgi.framework.Version;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.Designate;
@@ -86,7 +87,8 @@ public class OsgiInstallerHealthCheck implements HealthCheck {
     }
 
     @Activate
-    protected void activate(Configuration configuration) {
+    @Modified
+    protected void configure(Configuration configuration) {
         this.configuration = configuration;
         try {
             skipEntityIdsWithVersions = parseEntityIdsWithVersions(configuration.skipEntityIds());
