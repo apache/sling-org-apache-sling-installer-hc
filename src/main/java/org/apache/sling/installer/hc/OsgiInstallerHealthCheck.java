@@ -214,7 +214,7 @@ public class OsgiInstallerHealthCheck implements HealthCheck {
                     }
                 }
             } else {
-                LOG.debug("Skipping resource '{}' as its URL is not starting with any of these prefixes '{}'", resource, (Object) configuration.urlPrefixes());
+                LOG.debug("Skipping resource '{}' as its URL is not starting with any of these prefixes '{}'", resource, (Object) configuration.urlPrefixes()); // NOSONAR java:S1905
             }
         }
         if (invalidResource != null && configuration.allowIgnoredArtifactsInGroup()) {
