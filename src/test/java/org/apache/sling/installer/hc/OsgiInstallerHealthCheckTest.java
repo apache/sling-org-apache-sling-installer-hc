@@ -21,27 +21,37 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.osgi.framework.Version;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class OsgiInstallerHealthCheckTest {
 
     @Test
-    public void testParseEntityIdsWithVersions() {
+    public void testParseEntityIdsWithVersions() throws IllegalAccessException {
         String[] entityIdsAndVersions = new String[] { "idA 1.0.0", "idA 2.0.0", "idB" };
-        Map<String, List<Version>> map = OsgiInstallerHealthCheck.parseEntityIdsWithVersions(entityIdsAndVersions);
+        final OsgiInstallerHealthCheckConfiguration configuration = mock(OsgiInstallerHealthCheckConfiguration.class);
+        when(configuration.skipEntityIds()).thenReturn(entityIdsAndVersions);
+        final OsgiInstallerHealthCheck healthCheck = new OsgiInstallerHealthCheck();
+        healthCheck.configure(configuration);
+        Map<String, List<Version>> map = (Map<String, List<Version>>) FieldUtils.readDeclaredField(healthCheck, "skipEntityIdsWithVersions", true);
         assertThat(map, Matchers.allOf(
                 Matchers.aMapWithSize(2),
                 Matchers.hasEntry("idA", Arrays.asList(new Version("1.0.0"), new Version("2.0.0"))),
                 Matchers.hasEntry("idB", null)));
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=IllegalStateException.class)
     public void testParseEntityIdsWithVersionsAndConflictingVersions() {
         String[] entityIdsAndVersions = new String[] { "idA", "idA 2.0.0", "idB" };
-        OsgiInstallerHealthCheck.parseEntityIdsWithVersions(entityIdsAndVersions);
+        final OsgiInstallerHealthCheckConfiguration configuration = mock(OsgiInstallerHealthCheckConfiguration.class);
+        when(configuration.skipEntityIds()).thenReturn(entityIdsAndVersions);
+        final OsgiInstallerHealthCheck healthCheck = new OsgiInstallerHealthCheck();
+        healthCheck.configure(configuration);
     }
 }

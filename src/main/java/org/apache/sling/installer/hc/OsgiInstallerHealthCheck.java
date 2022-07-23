@@ -32,21 +32,24 @@ import org.apache.sling.installer.api.info.InfoProvider;
 import org.apache.sling.installer.api.info.InstallationState;
 import org.apache.sling.installer.api.info.Resource;
 import org.apache.sling.installer.api.info.ResourceGroup;
-import org.apache.sling.installer.hc.OsgiInstallerHealthCheck.Configuration;
 import org.osgi.framework.Version;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.Designate;
-import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component(property={ HealthCheck.NAME+"="+OsgiInstallerHealthCheck.HC_NAME })
-@Designate(ocd=Configuration.class)
+@Component(
+    property = {
+        HealthCheck.NAME + "=" + OsgiInstallerHealthCheck.HC_NAME
+    }
+)
+@Designate(
+    ocd = OsgiInstallerHealthCheckConfiguration.class
+)
 public class OsgiInstallerHealthCheck implements HealthCheck {
     protected static final String HC_NAME = "OSGi Installer Health Check";
 
@@ -55,7 +58,7 @@ public class OsgiInstallerHealthCheck implements HealthCheck {
 
     private static final Logger LOG = LoggerFactory.getLogger(OsgiInstallerHealthCheck.class);
 
-    private Configuration configuration;
+    private OsgiInstallerHealthCheckConfiguration configuration;
     private Map<String, List<Version>> skipEntityIdsWithVersions;
     
     private static final String DOCUMENTATION_URL = "https://sling.apache.org/documentation/bundles/osgi-installer.html#health-check";
@@ -63,32 +66,9 @@ public class OsgiInstallerHealthCheck implements HealthCheck {
     @Reference
     private ConfigurationAdmin configurationAdmin;
     
-    @ObjectClassDefinition(name = HC_NAME, 
-            description="Checks that all OSGi configurations/bundles are successfully installed by the OSGi Installer (and are not skipped for some reason).")
-    protected static @interface Configuration {
-        @AttributeDefinition(name="Tags", description="Tags with which this healthcheck is associated")
-        @SuppressWarnings("java:S100")
-        String[] hc_tags() default {"installer", "osgi"};
-        
-        @AttributeDefinition(name="URL Prefixes to consider", description = "Only those OSGi configurations/bundles whose location are starting with one of the given URL prefixes are checked (whether they are installed correctly). Open /system/console/osgi-installer for a list of valid prefixes.")
-        String[] urlPrefixes() default "jcrinstall:/apps/";
-        
-        @AttributeDefinition(name="Check Bundles", description = "If enabled bundles are checked (restricted to the ones matching one of the prefixes)")
-        boolean checkBundles() default true;
-        
-        @AttributeDefinition(name="Check Configurations", description = "If enabled configurations are checked (restricted to the ones matching one of the prefixes)")
-        boolean checkConfigurations() default true;
-        
-        @AttributeDefinition(name="Allow ignored artifacts in a group", description = "If true there is no warning reported for not installed artifacts if at least one artifact in the same group (i.e. with the same entity id) is installed matching one of the configured URL prefixes. Otherwise there is a warning for every ignored artifact.")
-        boolean allowIgnoredArtifactsInGroup() default false;
-        
-        @AttributeDefinition(name="Skip entity ids", description = "The given entity ids should be skipped for the health check. Each entry has the format '<entity id> [<version>]'.")
-        String[] skipEntityIds();
-    }
-
     @Activate
     @Modified
-    protected void configure(Configuration configuration) {
+    protected void configure(OsgiInstallerHealthCheckConfiguration configuration) {
         this.configuration = configuration;
         try {
             skipEntityIdsWithVersions = parseEntityIdsWithVersions(configuration.skipEntityIds());
