@@ -33,7 +33,6 @@ import org.apache.sling.installer.api.info.InstallationState;
 import org.apache.sling.installer.api.info.Resource;
 import org.apache.sling.installer.api.info.ResourceGroup;
 import org.osgi.framework.Version;
-import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Modified;
@@ -63,9 +62,6 @@ public class OsgiInstallerHealthCheck implements HealthCheck {
     
     private static final String DOCUMENTATION_URL = "https://sling.apache.org/documentation/bundles/osgi-installer.html#health-check";
 
-    @Reference
-    private ConfigurationAdmin configurationAdmin;
-    
     @Activate
     @Modified
     protected void configure(OsgiInstallerHealthCheckConfiguration configuration) {
